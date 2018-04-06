@@ -131,7 +131,7 @@ def get_ts(lon, lat,
                              linestyle='--',
                              linewidth=0.2)
             ax.set_ylabel('Soil Moisture Anomaly [%-Vol.]')
-            plt.legen(handles=[line1, line2])
+            plt.legend(handles=[line1, line2])
             plotname = 's1_sm_anom' + str(lon) + '_' + str(lat) + '.png'
 
         plt.setp(ax.get_xticklabels(), fontsize=6)

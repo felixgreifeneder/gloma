@@ -656,9 +656,9 @@ class GEE_pt(object):
             fmat_tmp1 = np.array([k1VV, k1VH, k2VV, k2VH, self.LC, np.mean(temp_tslia), self.ASPE,
                                   gldas_series.median()])  # , aspe, slop, elev, gldas_series.mean()])
 
-            fmat_tmp2 = np.hstack(((temp_ts1_lin - meanVV).reshape(ts_length, 1),
-                                   (temp_ts2_lin - meanVH).reshape(ts_length, 1),
-                                   (gldas_series - gldas_series.mean()).reshape(ts_length, 1)))
+            fmat_tmp2 = np.hstack(((temp_ts1_lin - meanVV).values.reshape(ts_length, 1),
+                                   (temp_ts2_lin - meanVH).values.reshape(ts_length, 1),
+                                   (gldas_series - gldas_series.mean()).values.reshape(ts_length, 1)))
 
             # apply masks to dates and fmat
             fmat_tmp2 = fmat_tmp2[valid2, :]
@@ -675,6 +675,7 @@ class GEE_pt(object):
             avg_ssm_estimated_tmp = nn_model1.predict(fvect1)
             diff_ssm_estimated_tmp = nn_model2.predict(fvect2)
             ssm_estimated_tmp = pd.Series((diff_ssm_estimated_tmp + avg_ssm_estimated_tmp)*100, index=dates, name='S1')
+            ssm_estimated_tmp = ssm_estimated_tmp[~ssm_estimated_tmp.index.duplicated(keep='first')]
 
             sm_estimated.append(ssm_estimated_tmp.copy())
 
@@ -695,7 +696,9 @@ class GEE_pt(object):
                 gldas_clim = anomaly.calc_climatology(gldas_ts, moving_avg_clim=30)
                 gldas_clim = pd.DataFrame(pd.Series(gldas_clim, name='S1'))
                 # calculate anomaly
-                anom_estimated_tmp = pd.Series([ssm_estimated_tmp[dateI] - gldas_clim['S1'][dateI.dayofyear] for dateI in ssm_estimated_tmp.index], index = ssm_estimated_tmp.index)
+                anom_estimated_tmp = pd.Series([ssm_estimated_tmp[dateI] - gldas_clim['S1'][dateI.dayofyear] for dateI in ssm_estimated_tmp.index],
+                                               index = ssm_estimated_tmp.index,
+                                               dtype=np.float64)
                 anom_estimated.append(anom_estimated_tmp.copy())
 
         sm_estimated = pd.concat(sm_estimated)
