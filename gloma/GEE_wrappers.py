@@ -587,10 +587,7 @@ class GEE_pt(object):
                 tracknr=None,
                 masksnow=False,
                 tempfilter=True,
-                create_plot=True,
-                save_as_txt=True,
-                calc_anomalies=False,
-                name=None):
+                calc_anomalies=False):
 
         if self.S1TS == None:
             # get S1 time-series
@@ -600,7 +597,7 @@ class GEE_pt(object):
         s1_ts = self.S1TS
 
         # load SVR model
-        modelpath = os.path.join(os.getcwd(), 'S1SM', 'SVRmodel.p')
+        modelpath = os.path.join(os.getcwd(), 'gloma', 'SVRmodel.p')
         MLmodel = pickle.load(open(modelpath, 'rb'))
 
         # extract land cover
@@ -694,61 +691,12 @@ class GEE_pt(object):
                 gldas_tmp = lin_fit.predict(gldas_ts.values.reshape(-1, 1))
                 gldas_ts = pd.Series(gldas_tmp, index=gldas_ts.index)
 
-                if create_plot == True:
-                    # plot s1 soil moisture vs gldas_downscaled
-                    plt.figure()
-                    tmp = pd.concat([gldas_s1['S1'], pd.Series(lin_fit.predict(gldas_s1['GLDAS'].values.reshape(-1, 1)),
-                                                               index=gldas_s1['GLDAS'].index, name='GLDAS')], axis=1,
-                                    join='inner')
-                    tmp.plot(ylim=(5, 60), figsize=(6.3, 2.6))
-                    plt.ylabel('Soil Moisture [%]')
-                    plt.title(name)
-                    plt.minorticks_on()
-                    plt.show()
-                    outfile = self.workdir + 's1ts_gldasPredts' + str(self.lon) + '_' + str(self.lat) + '_' + str(track_id)
-                    plt.savefig(outfile + '.png')
-                    plt.close()
-                    plt.figure()
-                    gldas_s1.plot(ylim=(5, 60), figsize=(6.3, 2.6))
-                    plt.ylabel('Soil Moisture [%]')
-                    plt.title(name)
-                    plt.show()
-                    outfile = self.workdir + 's1ts_gldasts' + str(self.lon) + '_' + str(self.lat) + '_' + str(track_id)
-                    plt.savefig(outfile + '.png')
-                    plt.close()
-
                 # calculate climatology
                 gldas_clim = anomaly.calc_climatology(gldas_ts, moving_avg_clim=30)
                 gldas_clim = pd.DataFrame(pd.Series(gldas_clim, name='S1'))
                 # calculate anomaly
                 anom_estimated_tmp = pd.Series([ssm_estimated_tmp[dateI] - gldas_clim['S1'][dateI.dayofyear] for dateI in ssm_estimated_tmp.index], index = ssm_estimated_tmp.index)
                 anom_estimated.append(anom_estimated_tmp.copy())
-
-                if create_plot == True:
-                    # plot climatology
-                    plt.figure()
-                    gldas_clim.plot(ylim=(5, 60), figsize=(6.3, 2.6))
-                    plt.ylabel('Soil Moisture [%]')
-                    plt.xlabel('DOY')
-                    plt.title('Climatology: ' + name)
-                    plt.show()
-                    outfile = self.workdir + 'climatology' + str(self.lon) + '_' + str(self.lat) + '_' + str(track_id)
-                    plt.savefig(outfile + '.png')
-                    plt.close()
-
-                    # plot anomalies
-                    fig, axs = plt.subplots(figsize=(6.3, 2.6))
-                    plot_clim_anom(ssm_estimated_tmp, clim=gldas_clim, axes=[axs])
-                    for tick in axs.get_xticklabels():
-                        tick.set_rotation(45)
-                        tick
-                    outfile = self.workdir + 's1ts_anomalies' + str(self.lon) + '_' + str(self.lat) + '_' + str(track_id)
-                    plt.title(name)
-                    plt.ylabel('Soil Moisture [%]')
-                    plt.ylim((5, 60))
-                    plt.savefig(outfile + '.png')
-                    plt.close()
-
 
         sm_estimated = pd.concat(sm_estimated)
         sm_estimated.sort_index(inplace=True)
